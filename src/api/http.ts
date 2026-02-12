@@ -1,4 +1,4 @@
-const API_BASE_URL = import.meta.env.VITE_API_URL ?? "http://localhost:3001";
+import { API_BASE_URL } from "../config";
 
 export function resolveImageUrl(url: string): string {
   // If url is already absolute, return as-is
@@ -31,18 +31,30 @@ export async function api<T>(path: string, init?: RequestInit): Promise<T> {
     headers["Content-Type"] = "application/json";
   }
 
-  const res = await fetch(`${API_BASE_URL}${path}`, {
-    headers,
-    ...init,
-  });
+  const url = `${API_BASE_URL}${path}`;
+  console.log(`[API] ${init?.method || "GET"} ${url}`);
 
-  const text = await res.text();
-  const body = text ? safeJson(text) : null;
+  try {
+    const res = await fetch(url, {
+      headers,
+      ...init,
+    });
 
-  if (!res.ok) {
-    throw new ApiError(body?.error ?? `Request failed: ${res.status}`, res.status, body);
+    const text = await res.text();
+    const body = text ? safeJson(text) : null;
+
+    if (!res.ok) {
+      const errorMsg = body?.error ?? `Request failed: ${res.status}`;
+      console.error(`[API] Error ${res.status}: ${errorMsg} from ${url}`);
+      throw new ApiError(errorMsg, res.status, body);
+    }
+    console.log(`[API] Success: ${res.status} from ${url}`);
+    return body as T;
+  } catch (error: any) {
+    if (error instanceof ApiError) throw error;
+    console.error(`[API] Network error for ${url}:`, error?.message || error);
+    throw new ApiError(`Failed to fetch: ${error?.message || "Unknown error"}`, 0, null);
   }
-  return body as T;
 }
 
 function safeJson(text: string) {
