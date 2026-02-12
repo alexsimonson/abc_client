@@ -7,5 +7,6 @@ export default defineConfig({
   server: {
     port: 3001,
     strictPort: true, // fail instead of auto-switching
+    host: true
   }
 })

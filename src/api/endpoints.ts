@@ -39,6 +39,17 @@ export const adminItemsApi = {
       body: JSON.stringify(payload),
     }),
 
+  uploadImage: (itemId: number, file: File, altText?: string, sortOrder?: number) => {
+    const formData = new FormData();
+    formData.append("file", file);
+    if (altText) formData.append("altText", altText);
+    if (sortOrder !== undefined) formData.append("sortOrder", String(sortOrder));
+    return api<{ image: AdminItemImage }>(`/api/admin/items/${itemId}/images/upload`, {
+      method: "POST",
+      body: formData,
+    });
+  },
+
   patchImage: (imageId: number, patch: any) =>
     api<{ image: AdminItemImage }>(`/api/admin/items/images/${imageId}`, {
       method: "PATCH",

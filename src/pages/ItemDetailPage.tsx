@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import { itemsApi } from "../api/endpoints";
+import { resolveImageUrl } from "../api/http";
 import type { Item } from "../types";
 
 export function ItemDetailPage() {
@@ -32,7 +33,7 @@ export function ItemDetailPage() {
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(220px, 1fr))", gap: 10 }}>
         {item.images.map((img) => (
           <div key={img.id} style={{ background: "#f6f6f6", borderRadius: 8, overflow: "hidden", height: 200 }}>
-            <img src={img.url} alt={img.altText ?? item.title} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+            <img src={resolveImageUrl(img.url)} alt={img.altText ?? item.title} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
           </div>
         ))}
       </div>
