@@ -1,11 +1,24 @@
 import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { adminItemsApi } from "../../api/endpoints";
+import { useAuth } from "../../auth/authProvider";
 import type { AdminItem } from "../../types";
 import { ImageGalleryModal } from "./ImageGalleryModal";
 
 export function AdminItemsPage() {
+  const { user, state } = useAuth();
+  const navigate = useNavigate();
   const [items, setItems] = useState<AdminItem[] | null>(null);
   const [err, setErr] = useState<string | null>(null);
+
+  // Redirect to login if not authenticated
+  useEffect(() => {
+    if (state.status === "anon") {
+      navigate("/admin/login");
+    } else if (state.status === "authed" && !user?.isAdmin) {
+      setErr("You must be an admin to access this page");
+    }
+  }, [state, user, navigate]);
 
   const [newTitle, setNewTitle] = useState("");
   const [newPriceCents, setNewPriceCents] = useState(1000);

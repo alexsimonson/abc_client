@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { api } from "../api";
-import { useAuth } from "../auth/AuthProvider";
+import { useAuth } from "../auth/authProvider";
 import type { Server, Channel, Message } from "../types";
 import { ServerList } from "../components/ServerList";
 import { ChannelList } from "../components/ChannelList";

@@ -37,6 +37,7 @@ export async function api<T>(path: string, init?: RequestInit): Promise<T> {
   try {
     const res = await fetch(url, {
       headers,
+      credentials: "include", // Include credentials for session cookies
       ...init,
     });
 

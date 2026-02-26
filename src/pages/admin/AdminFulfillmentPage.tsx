@@ -1,11 +1,24 @@
 import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { adminFulfillmentApi } from "../../api/endpoints";
+import { useAuth } from "../../auth/authProvider";
 import type { FulfillmentQueueRow, FulfillmentStateCode } from "../../types";
 
 export function AdminFulfillmentPage() {
+  const { user, state: authState } = useAuth();
+  const navigate = useNavigate();
   const [state, setState] = useState<FulfillmentStateCode>("NEEDS_CREATED");
   const [rows, setRows] = useState<FulfillmentQueueRow[] | null>(null);
   const [err, setErr] = useState<string | null>(null);
+
+  // Redirect to login if not authenticated
+  useEffect(() => {
+    if (authState.status === "anon") {
+      navigate("/admin/login");
+    } else if (authState.status === "authed" && !user?.isAdmin) {
+      setErr("You must be an admin to access this page");
+    }
+  }, [authState, user, navigate]);
 
   const [carrier, setCarrier] = useState("USPS");
   const [trackingNumber, setTrackingNumber] = useState("");

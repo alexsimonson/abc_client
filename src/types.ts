@@ -6,6 +6,14 @@ export type ItemImage = {
   altText: string | null;
 };
 
+export type User = {
+  id: string;
+  email: string;
+  username: string;
+  displayName: string | null;
+  isAdmin: boolean;
+};
+
 export type Item = {
   id: number;
   title: string;

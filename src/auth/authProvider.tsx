@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useEffect, useMemo, useState } from "react";
 import type { User } from "../types";
-import { api } from "../api";
+import { authApi } from "../api/endpoints";
 
 type AuthState =
   | { status: "loading"; user: null }
@@ -9,6 +9,7 @@ type AuthState =
 
 type AuthCtx = {
   state: AuthState;
+  user: User | null;
   login: (email: string, password: string) => Promise<void>;
   logout: () => Promise<void>;
   refreshMe: () => Promise<void>;
@@ -21,7 +22,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   async function refreshMe() {
     try {
-      const { user } = await api.me();
+      const { user } = await authApi.me();
       setState({ status: "authed", user });
     } catch {
       setState({ status: "anon", user: null });
@@ -29,12 +30,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }
 
   async function login(email: string, password: string) {
-    const { user } = await api.login(email, password);
+    const { user } = await authApi.login(email, password);
     setState({ status: "authed", user });
   }
 
   async function logout() {
-    await api.logout();
+    await authApi.logout();
     setState({ status: "anon", user: null });
   }
 
@@ -43,7 +44,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  const value = useMemo<AuthCtx>(() => ({ state, login, logout, refreshMe }), [state]);
+  const value = useMemo<AuthCtx>(
+    () => ({ 
+      state, 
+      user: state.status === "authed" ? state.user : null,
+      login, 
+      logout, 
+      refreshMe 
+    }), 
+    [state]
+  );
 
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>;
 }

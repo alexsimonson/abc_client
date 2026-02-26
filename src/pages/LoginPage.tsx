@@ -1,12 +1,20 @@
 import { useState } from "react";
-import { useAuth } from "../auth/AuthProvider";
+import { useAuth } from "../auth/authProvider";
+import { useNavigate } from "react-router-dom";
 
 export function LoginPage() {
-  const { login } = useAuth();
-  const [email, setEmail] = useState("alex@test.com");
-  const [password, setPassword] = useState("password");
+  const { login, user } = useAuth();
+  const navigate = useNavigate();
+  const [email, setEmail] = useState("admin@abc.com");
+  const [password, setPassword] = useState("admin123");
   const [err, setErr] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+
+  // Redirect if already logged in
+  if (user?.isAdmin) {
+    navigate("/admin/items");
+    return null;
+  }
 
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -14,6 +22,8 @@ export function LoginPage() {
     setBusy(true);
     try {
       await login(email, password);
+      // Redirect to admin items page after successful login
+      navigate("/admin/items");
     } catch (e: any) {
       setErr(e?.message ?? "LOGIN_FAILED");
     } finally {
@@ -23,8 +33,8 @@ export function LoginPage() {
 
   return (
     <div style={{ maxWidth: 420, margin: "80px auto", fontFamily: "system-ui" }}>
-      <h1>evil_chat_dev</h1>
-      <p style={{ opacity: 0.8 }}>Login to test the MVP.</p>
+      <h1>ABC Admin Login</h1>
+      <p style={{ opacity: 0.8 }}>Login to access admin features.</p>
 
       <form onSubmit={onSubmit} style={{ display: "grid", gap: 10 }}>
         <label>

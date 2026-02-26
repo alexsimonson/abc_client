@@ -1,5 +1,6 @@
 import { api } from "./http";
 import type {
+  User,
   Item,
   CreateOrderInput,
   CreateOrderResult,
@@ -8,6 +9,27 @@ import type {
   FulfillmentQueueRow,
   FulfillmentStateCode,
 } from "../types";
+
+export const authApi = {
+  me: () => api<{ user: User }>("/api/auth/me", { credentials: "include" }),
+  login: (email: string, password: string) =>
+    api<{ user: User }>("/api/auth/login", {
+      method: "POST",
+      body: JSON.stringify({ email, password }),
+      credentials: "include",
+    }),
+  logout: () =>
+    api<void>("/api/auth/logout", {
+      method: "POST",
+      credentials: "include",
+    }),
+  updateProfile: (payload: { username?: string; displayName?: string; email?: string }) =>
+    api<{ user: User }>("/api/auth/me", {
+      method: "PUT",
+      body: JSON.stringify(payload),
+      credentials: "include",
+    }),
+};
 
 export const itemsApi = {
   list: () => api<{ items: Item[] }>("/api/items"),
