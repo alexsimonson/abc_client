@@ -1,10 +1,10 @@
-import { useEffect, useMemo, useState } from "react";
-import { itemsApi, ordersApi } from "../api/endpoints";
-import type { CreateOrderResult, Item } from "../types";
+import { useState, useMemo } from "react";
+import { ordersApi } from "../api/endpoints";
+import { useCart } from "../cart/CartContext";
+import type { CreateOrderResult } from "../types";
 
 export function CheckoutTestPage() {
-  const [items, setItems] = useState<Item[] | null>(null);
-  const [cart, setCart] = useState<Record<number, number>>({});
+  const { items: cartItems, updateQuantity, removeFromCart, clearCart, subtotalCents } = useCart();
   const [email, setEmail] = useState("test@example.com");
   const [shippingCents, setShippingCents] = useState(500);
   const [taxCents, setTaxCents] = useState(0);
@@ -12,21 +12,12 @@ export function CheckoutTestPage() {
   const [err, setErr] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
 
-  useEffect(() => {
-    itemsApi.list().then((r) => setItems(r.items)).catch((e) => setErr(String(e?.message ?? e)));
-  }, []);
-
   const lineItems = useMemo(() => {
-    return Object.entries(cart)
-      .map(([id, qty]) => ({ itemId: Number(id), quantity: qty }))
-      .filter((x) => x.quantity > 0);
-  }, [cart]);
-
-  const subtotalCents = useMemo(() => {
-    if (!items) return 0;
-    const map = new Map(items.map((i) => [i.id, i]));
-    return lineItems.reduce((sum, li) => sum + (map.get(li.itemId)?.priceCents ?? 0) * li.quantity, 0);
-  }, [items, lineItems]);
+    return cartItems.map((item) => ({
+      itemId: item.itemId,
+      quantity: item.quantity,
+    }));
+  }, [cartItems]);
 
   async function placeOrder() {
     setErr(null);
@@ -46,7 +37,7 @@ export function CheckoutTestPage() {
         currency: "USD",
       });
       setResult(res);
-      setCart({});
+      clearCart();
     } catch (e: any) {
       setErr(String(e?.message ?? e));
     } finally {
@@ -54,60 +45,80 @@ export function CheckoutTestPage() {
     }
   }
 
-  if (err) return <div style={{ color: "crimson" }}>Error: {err}</div>;
-  if (!items) return <div>Loading…</div>;
+  if (err && !result) return <div style={{ color: "crimson" }}>Error: {err}</div>;
 
   return (
     <div>
-      <h3>Checkout Test</h3>
+      <h3>Checkout</h3>
 
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
-        <div style={{ border: "1px solid #ddd", borderRadius: 8, padding: 12 }}>
-          <h4>Pick quantities</h4>
-          {items.map((it) => (
-            <div key={it.id} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "6px 0" }}>
-              <div>
-                <div style={{ fontWeight: 700 }}>{it.title}</div>
-                <div style={{ opacity: 0.7, fontSize: 13 }}>${(it.priceCents / 100).toFixed(2)} • Stock: {it.quantityAvailable}</div>
-              </div>
-              <input
-                type="number"
-                min={0}
-                value={cart[it.id] ?? 0}
-                onChange={(e) => setCart((c) => ({ ...c, [it.id]: Math.max(0, Number(e.target.value || 0)) }))}
-                style={{ width: 80 }}
-              />
-            </div>
-          ))}
+      {cartItems.length === 0 ? (
+        <div style={{ padding: "40px 0", textAlign: "center", color: "#999" }}>
+          Your cart is empty. <a href="/">Browse items</a>
         </div>
+      ) : (
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
+          <div style={{ border: "1px solid #ddd", borderRadius: 8, padding: 12 }}>
+            <h4>Your Cart</h4>
+            {cartItems.map((item) => (
+              <div key={item.itemId} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "10px 0", borderBottom: "1px solid #eee" }}>
+                <div>
+                  <div style={{ fontWeight: 700 }}>{item.title}</div>
+                  <div style={{ opacity: 0.7, fontSize: 13 }}>${(item.priceCents / 100).toFixed(2)} each</div>
+                </div>
+                <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                  <input
+                    type="number"
+                    min={0}
+                    value={item.quantity}
+                    onChange={(e) => {
+                      const qty = Number(e.target.value || 0);
+                      if (qty === 0) {
+                        removeFromCart(item.itemId);
+                      } else {
+                        updateQuantity(item.itemId, qty);
+                      }
+                    }}
+                    style={{ width: 80 }}
+                  />
+                  <button
+                    onClick={() => removeFromCart(item.itemId)}
+                    style={{ background: "#ff4444", color: "white", border: "none", padding: "4px 8px", borderRadius: 4, cursor: "pointer" }}
+                  >
+                    Remove
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
 
-        <div style={{ border: "1px solid #ddd", borderRadius: 8, padding: 12 }}>
-          <h4>Order</h4>
-          <div style={{ display: "grid", gap: 8 }}>
-            <label>
-              Email
-              <input value={email} onChange={(e) => setEmail(e.target.value)} style={{ width: "100%" }} />
-            </label>
-            <label>
-              Shipping (cents)
-              <input type="number" value={shippingCents} onChange={(e) => setShippingCents(Number(e.target.value || 0))} style={{ width: "100%" }} />
-            </label>
-            <label>
-              Tax (cents)
-              <input type="number" value={taxCents} onChange={(e) => setTaxCents(Number(e.target.value || 0))} style={{ width: "100%" }} />
-            </label>
+          <div style={{ border: "1px solid #ddd", borderRadius: 8, padding: 12 }}>
+            <h4>Order Details</h4>
+            <div style={{ display: "grid", gap: 8 }}>
+              <label>
+                Email
+                <input value={email} onChange={(e) => setEmail(e.target.value)} style={{ width: "100%" }} />
+              </label>
+              <label>
+                Shipping (cents)
+                <input type="number" value={shippingCents} onChange={(e) => setShippingCents(Number(e.target.value || 0))} style={{ width: "100%" }} />
+              </label>
+              <label>
+                Tax (cents)
+                <input type="number" value={taxCents} onChange={(e) => setTaxCents(Number(e.target.value || 0))} style={{ width: "100%" }} />
+              </label>
 
-            <div style={{ paddingTop: 8 }}>
-              <div>Subtotal: ${(subtotalCents / 100).toFixed(2)}</div>
-              <div>Total: ${((subtotalCents + taxCents + shippingCents) / 100).toFixed(2)}</div>
+              <div style={{ paddingTop: 8 }}>
+                <div>Subtotal: ${(subtotalCents / 100).toFixed(2)}</div>
+                <div>Total: ${((subtotalCents + taxCents + shippingCents) / 100).toFixed(2)}</div>
+              </div>
+
+              <button disabled={busy || cartItems.length === 0} onClick={placeOrder} style={{ padding: 10, marginTop: 8 }}>
+                {busy ? "Placing…" : "Place Order (Test)"}
+              </button>
             </div>
-
-            <button disabled={busy} onClick={placeOrder} style={{ padding: 10 }}>
-              {busy ? "Placing…" : "Place Order (Test)"}
-            </button>
           </div>
         </div>
-      </div>
+      )}
 
       {result ? (
         <div style={{ marginTop: 16, border: "1px solid #ddd", borderRadius: 8, padding: 12 }}>
