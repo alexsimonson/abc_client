@@ -8,6 +8,9 @@ import type {
   AdminItemImage,
   FulfillmentQueueRow,
   FulfillmentStateCode,
+  SupportTicket,
+  CreateTicketInput,
+  UpdateTicketInput,
 } from "../types";
 
 export const authApi = {
@@ -97,4 +100,16 @@ export const adminFulfillmentApi = {
       `/api/admin/fulfillment/units/${unitId}/ship`,
       { method: "PATCH", body: JSON.stringify(payload) }
     ),
+};
+
+export const ticketsApi = {
+  create: (payload: CreateTicketInput) =>
+    api<SupportTicket>("/api/tickets", { method: "POST", body: JSON.stringify(payload) }),
+};
+
+export const adminTicketsApi = {
+  list: () => api<SupportTicket[]>("/api/admin/tickets"),
+  get: (id: number) => api<SupportTicket>(`/api/admin/tickets/${id}`),
+  patch: (id: number, payload: UpdateTicketInput) =>
+    api<SupportTicket>(`/api/admin/tickets/${id}`, { method: "PATCH", body: JSON.stringify(payload) }),
 };

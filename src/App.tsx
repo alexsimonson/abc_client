@@ -2,9 +2,11 @@ import { Link, Route, Routes } from "react-router-dom";
 import { ItemsListPage } from "./pages/ItemsListPage";
 import { ItemDetailPage } from "./pages/ItemDetailPage";
 import { CheckoutTestPage } from "./pages/CheckoutTestPage";
+import { ContactPage } from "./pages/ContactPage";
 import { LoginPage } from "./pages/LoginPage";
 import { AdminItemsPage } from "./pages/admin/AdminItemsPage";
 import { AdminFulfillmentPage } from "./pages/admin/AdminFulfillmentPage";
+import { AdminTicketsPage } from "./pages/admin/AdminTicketsPage";
 import { useAuth } from "./auth/authProvider";
 import { CartWidget } from "./cart/CartWidget";
 import { useCart } from "./cart/CartContext";
@@ -18,7 +20,7 @@ export default function App() {
     <div style={{ fontFamily: "system-ui", padding: 16, maxWidth: 1100, margin: "0 auto" }}>
       <header style={{ display: "flex", gap: 12, alignItems: "center", marginBottom: 16 }}>
         <h2 style={{ margin: 0 }}>Crochet Store — Test Console</h2>
-        <nav style={{ display: "flex", gap: 12, alignItems: "center" }}>
+        <nav style={{ display: "flex", gap: 12, alignItems: "center", flex: 1 }}>
           <Link to="/">Items</Link>
           <Link to="/checkout" style={{ position: "relative" }}>
             Checkout
@@ -49,6 +51,7 @@ export default function App() {
               <span style={{ opacity: 0.5 }}>|</span>
               <Link to="/admin/items">Admin Items</Link>
               <Link to="/admin/fulfillment">Admin Fulfillment</Link>
+              <Link to="/admin/tickets">Admin Tickets</Link>
             </>
           )}
           {user && (
@@ -60,6 +63,7 @@ export default function App() {
               </button>
             </>
           )}
+          <Link to="/contact" style={{ marginLeft: "auto" }}>Contact</Link>
         </nav>
       </header>
 
@@ -67,9 +71,11 @@ export default function App() {
         <Route path="/" element={<ItemsListPage />} />
         <Route path="/items/:id" element={<ItemDetailPage />} />
         <Route path="/checkout" element={<CheckoutTestPage />} />
+        <Route path="/contact" element={<ContactPage />} />
         <Route path="/admin/login" element={<LoginPage />} />
         <Route path="/admin/items" element={<AdminItemsPage />} />
         <Route path="/admin/fulfillment" element={<AdminFulfillmentPage />} />
+        <Route path="/admin/tickets" element={<AdminTicketsPage />} />
       </Routes>
 
       <CartWidget />

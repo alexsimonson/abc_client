@@ -92,3 +92,27 @@ export type AdminItemImage = {
   sortOrder: number | null;
   altText: string | null;
 };
+
+export type TicketStatusCode = "NEW" | "IN_PROGRESS" | "RESOLVED" | "CLOSED";
+
+export type SupportTicket = {
+  id: number;
+  email: string;
+  subject: string;
+  message: string;
+  statusCode: TicketStatusCode;
+  adminNotes: string | null;
+  createdAt: string;
+  updatedAt: string;
+};
+
+export type CreateTicketInput = {
+  email: string;
+  subject: string;
+  message: string;
+};
+
+export type UpdateTicketInput = {
+  statusCode?: TicketStatusCode;
+  adminNotes?: string;
+};

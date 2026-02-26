@@ -1,4 +1,9 @@
 import React, { createContext, useContext, useState, useEffect, useMemo } from "react";
+import { useToast } from "../components/Toast";
+
+// Cart limits - must match server-side validation
+const MAX_QUANTITY_PER_ITEM = 10;
+const MAX_TOTAL_CART_ITEMS = 20;
 
 export type CartItem = {
   itemId: number;
@@ -22,6 +27,7 @@ const CartContext = createContext<CartContextType | undefined>(undefined);
 const CART_STORAGE_KEY = "abc_shopping_cart";
 
 export function CartProvider({ children }: { children: React.ReactNode }) {
+  const { showToast } = useToast();
   const [items, setItems] = useState<CartItem[]>(() => {
     // Load cart from localStorage on init
     try {
@@ -38,17 +44,46 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
   }, [items]);
 
   const addToCart = (itemId: number, quantity: number, title: string, priceCents: number) => {
-    setItems((prev) => {
-      const existing = prev.find((item) => item.itemId === itemId);
-      if (existing) {
-        return prev.map((item) =>
+    // Validate before updating state to avoid setState during render
+    const existing = items.find((item) => item.itemId === itemId);
+    const currentTotal = items.reduce((sum, item) => sum + item.quantity, 0);
+    
+    if (existing) {
+      const newItemQuantity = existing.quantity + quantity;
+      
+      // Check per-item limit
+      if (newItemQuantity > MAX_QUANTITY_PER_ITEM) {
+        showToast(`Cannot add more than ${MAX_QUANTITY_PER_ITEM} of the same item. For larger orders, please contact us directly.`, "warning", "/contact");
+        return;
+      }
+      
+      // Check total cart limit
+      if (currentTotal + quantity > MAX_TOTAL_CART_ITEMS) {
+        showToast(`Cart is limited to ${MAX_TOTAL_CART_ITEMS} total items. For larger orders, please contact us directly.`, "warning", "/contact");
+        return;
+      }
+      
+      setItems((prev) =>
+        prev.map((item) =>
           item.itemId === itemId
             ? { ...item, quantity: item.quantity + quantity }
             : item
-        );
+        )
+      );
+    } else {
+      // New item validation
+      if (quantity > MAX_QUANTITY_PER_ITEM) {
+        showToast(`Cannot add more than ${MAX_QUANTITY_PER_ITEM} of the same item. For larger orders, please contact us directly.`, "warning", "/contact");
+        return;
       }
-      return [...prev, { itemId, quantity, title, priceCents }];
-    });
+      
+      if (currentTotal + quantity > MAX_TOTAL_CART_ITEMS) {
+        showToast(`Cart is limited to ${MAX_TOTAL_CART_ITEMS} total items. For larger orders, please contact us directly.`, "warning", "/contact");
+        return;
+      }
+      
+      setItems((prev) => [...prev, { itemId, quantity, title, priceCents }]);
+    }
   };
 
   const removeFromCart = (itemId: number) => {
@@ -60,6 +95,22 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
       removeFromCart(itemId);
       return;
     }
+    
+    // Validate before updating state to avoid setState during render
+    if (quantity > MAX_QUANTITY_PER_ITEM) {
+      showToast(`Cannot have more than ${MAX_QUANTITY_PER_ITEM} of the same item. For larger orders, please contact us directly.`, "warning", "/contact");
+      return;
+    }
+    
+    const currentTotalWithoutItem = items.reduce((sum, item) => 
+      item.itemId === itemId ? sum : sum + item.quantity, 0
+    );
+    
+    if (currentTotalWithoutItem + quantity > MAX_TOTAL_CART_ITEMS) {
+      showToast(`Cart is limited to ${MAX_TOTAL_CART_ITEMS} total items. For larger orders, please contact us directly.`, "warning", "/contact");
+      return;
+    }
+    
     setItems((prev) =>
       prev.map((item) =>
         item.itemId === itemId ? { ...item, quantity } : item

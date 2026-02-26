@@ -6,6 +6,7 @@ import type { CreateOrderResult } from "../types";
 export function CheckoutTestPage() {
   const { items: cartItems, updateQuantity, removeFromCart, clearCart, subtotalCents } = useCart();
   const [email, setEmail] = useState("test@example.com");
+  const [emailError, setEmailError] = useState<string | null>(null);
   const [shippingCents, setShippingCents] = useState(500);
   const [taxCents, setTaxCents] = useState(0);
   const [result, setResult] = useState<CreateOrderResult | null>(null);
@@ -19,17 +20,37 @@ export function CheckoutTestPage() {
     }));
   }, [cartItems]);
 
+  const validateEmail = (emailValue: string): boolean => {
+    const trimmed = emailValue.trim();
+    if (!trimmed) {
+      setEmailError("Email is required");
+      return false;
+    }
+    if (!trimmed.includes("@") || !trimmed.includes(".")) {
+      setEmailError("Please enter a valid email address");
+      return false;
+    }
+    // More comprehensive email regex
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(trimmed)) {
+      setEmailError("Please enter a valid email address");
+      return false;
+    }
+    setEmailError(null);
+    return true;
+  };
+
   async function placeOrder() {
     setErr(null);
     setResult(null);
 
-    if (!email) return setErr("Email required");
+    if (!validateEmail(email)) return;
     if (lineItems.length === 0) return setErr("Add at least one item");
 
     setBusy(true);
     try {
       const res = await ordersApi.create({
-        email,
+        email: email.trim(),
         shippingAddress: { name: "Test User", line1: "123 Main", city: "NYC", state: "NY", zip: "10001" },
         items: lineItems,
         taxCents,
@@ -95,24 +116,48 @@ export function CheckoutTestPage() {
             <h4>Order Details</h4>
             <div style={{ display: "grid", gap: 8 }}>
               <label>
-                Email
-                <input value={email} onChange={(e) => setEmail(e.target.value)} style={{ width: "100%" }} />
-              </label>
-              <label>
-                Shipping (cents)
-                <input type="number" value={shippingCents} onChange={(e) => setShippingCents(Number(e.target.value || 0))} style={{ width: "100%" }} />
-              </label>
-              <label>
-                Tax (cents)
-                <input type="number" value={taxCents} onChange={(e) => setTaxCents(Number(e.target.value || 0))} style={{ width: "100%" }} />
+                Email *
+                <input 
+                  type="email"
+                  value={email} 
+                  onChange={(e) => {
+                    setEmail(e.target.value);
+                    setEmailError(null); // Clear error on change
+                  }}
+                  onBlur={() => validateEmail(email)}
+                  style={{ 
+                    width: "100%",
+                    borderColor: emailError ? "#ff4444" : undefined,
+                    borderWidth: emailError ? 2 : undefined,
+                  }} 
+                />
+                {emailError && (
+                  <span style={{ color: "#ff4444", fontSize: 12, marginTop: 4 }}>
+                    {emailError}
+                  </span>
+                )}
               </label>
 
-              <div style={{ paddingTop: 8 }}>
-                <div>Subtotal: ${(subtotalCents / 100).toFixed(2)}</div>
-                <div>Total: ${((subtotalCents + taxCents + shippingCents) / 100).toFixed(2)}</div>
+              <div style={{ paddingTop: 8, borderTop: "1px solid #eee", marginTop: 8 }}>
+                <div style={{ display: "flex", justifyContent: "space-between", padding: "4px 0" }}>
+                  <span>Subtotal:</span>
+                  <span>${(subtotalCents / 100).toFixed(2)}</span>
+                </div>
+                <div style={{ display: "flex", justifyContent: "space-between", padding: "4px 0" }}>
+                  <span>Shipping:</span>
+                  <span>${(shippingCents / 100).toFixed(2)}</span>
+                </div>
+                <div style={{ display: "flex", justifyContent: "space-between", padding: "4px 0" }}>
+                  <span>Tax:</span>
+                  <span>${(taxCents / 100).toFixed(2)}</span>
+                </div>
+                <div style={{ display: "flex", justifyContent: "space-between", padding: "8px 0", borderTop: "1px solid #eee", marginTop: 4, fontWeight: 600, fontSize: 16 }}>
+                  <span>Total:</span>
+                  <span>${((subtotalCents + taxCents + shippingCents) / 100).toFixed(2)}</span>
+                </div>
               </div>
 
-              <button disabled={busy || cartItems.length === 0} onClick={placeOrder} style={{ padding: 10, marginTop: 8 }}>
+              <button disabled={busy || cartItems.length === 0 || !!emailError} onClick={placeOrder} style={{ padding: 10, marginTop: 8 }}>
                 {busy ? "Placing…" : "Place Order (Test)"}
               </button>
             </div>
