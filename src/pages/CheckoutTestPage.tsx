@@ -37,6 +37,13 @@ export function CheckoutTestPage() {
   const [shippingError, setShippingError] = useState<string | null>(null);
   const [activeStep, setActiveStep] = useState<"review" | "payment" | "confirm">("review");
 
+  const formatMoney = (cents: number, currency = "USD") => {
+    return new Intl.NumberFormat("en-US", {
+      style: "currency",
+      currency,
+    }).format(cents / 100);
+  };
+
   const squareApplicationId = import.meta.env.VITE_SQUARE_APPLICATION_ID;
   const squareLocationId = import.meta.env.VITE_SQUARE_LOCATION_ID;
   const squareEnvironment = (import.meta.env.VITE_SQUARE_ENVIRONMENT || "sandbox").toLowerCase() === "production"
@@ -470,10 +477,10 @@ export function CheckoutTestPage() {
               <strong>Order ID:</strong> {result.orderId}
             </div>
             <div>
-              <strong>Total:</strong> ${(result.totals.totalCents / 100).toFixed(2)} {result.totals.currency}
+              <strong>Total:</strong> {formatMoney(result.totals.totalCents, result.totals.currency)}
             </div>
             <div>
-              <strong>Status:</strong> Fulfillment Units Created
+              <strong>Status:</strong> {result.fulfillment.needsShipped > 0 ? "Ready to Ship" : "Completed"}
             </div>
             {paymentResult ? (
               <>
@@ -496,9 +503,73 @@ export function CheckoutTestPage() {
               </div>
             ) : null}
           </div>
-          <pre style={{ whiteSpace: "pre-wrap", maxHeight: 300, overflow: "auto", backgroundColor: "#f5f5f5", padding: 8, borderRadius: 4 }}>
-            {JSON.stringify(result, null, 2)}
-          </pre>
+          <div
+            style={{
+              backgroundColor: "#f8f9fb",
+              border: "1px solid #e5e7eb",
+              borderRadius: 8,
+              padding: 12,
+            }}
+          >
+            <h5 style={{ margin: "0 0 10px" }}>Order Summary</h5>
+
+            <div style={{ display: "grid", gap: 6, marginBottom: 12 }}>
+              <div style={{ display: "flex", justifyContent: "space-between" }}>
+                <span>Subtotal</span>
+                <strong>{formatMoney(result.totals.subtotalCents, result.totals.currency)}</strong>
+              </div>
+              <div style={{ display: "flex", justifyContent: "space-between" }}>
+                <span>Tax</span>
+                <strong>{formatMoney(result.totals.taxCents, result.totals.currency)}</strong>
+              </div>
+              <div style={{ display: "flex", justifyContent: "space-between" }}>
+                <span>Shipping</span>
+                <strong>{formatMoney(result.totals.shippingCents, result.totals.currency)}</strong>
+              </div>
+              <div style={{ borderTop: "1px solid #e5e7eb", paddingTop: 6, display: "flex", justifyContent: "space-between" }}>
+                <span>Total</span>
+                <strong>{formatMoney(result.totals.totalCents, result.totals.currency)}</strong>
+              </div>
+            </div>
+
+            <div style={{ marginBottom: 12 }}>
+              <h6 style={{ margin: "0 0 8px" }}>Items</h6>
+              <div style={{ display: "grid", gap: 8 }}>
+                {result.lineItems.map((lineItem) => (
+                  <div
+                    key={lineItem.id}
+                    style={{
+                      display: "flex",
+                      justifyContent: "space-between",
+                      alignItems: "center",
+                      backgroundColor: "white",
+                      border: "1px solid #e5e7eb",
+                      borderRadius: 6,
+                      padding: "8px 10px",
+                    }}
+                  >
+                    <div>
+                      <div style={{ fontWeight: 600 }}>{lineItem.title}</div>
+                      <div style={{ fontSize: 12, color: "#6b7280" }}>Qty {lineItem.quantity}</div>
+                    </div>
+                    <strong>{formatMoney(lineItem.unitPriceCents * lineItem.quantity, result.totals.currency)}</strong>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            <div>
+              <h6 style={{ margin: "0 0 8px" }}>Fulfillment</h6>
+              <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+                <span style={{ backgroundColor: "#eef2ff", color: "#3730a3", borderRadius: 999, padding: "4px 10px", fontSize: 12, fontWeight: 600 }}>
+                  Needs Created: {result.fulfillment.needsCreated}
+                </span>
+                <span style={{ backgroundColor: "#ecfdf5", color: "#065f46", borderRadius: 999, padding: "4px 10px", fontSize: 12, fontWeight: 600 }}>
+                  Needs Shipped: {result.fulfillment.needsShipped}
+                </span>
+              </div>
+            </div>
+          </div>
         </div>
       ) : null}
     </div>
