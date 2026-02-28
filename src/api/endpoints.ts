@@ -44,6 +44,23 @@ export const ordersApi = {
     api<CreateOrderResult>("/api/orders", { method: "POST", body: JSON.stringify(payload) }),
 };
 
+export const paymentApi = {
+  process: (payload: {
+    email: string;
+    shippingAddress: Record<string, unknown> | null;
+    items: Array<{ itemId: number; quantity: number }>;
+    taxCents: number;
+    shippingCents: number;
+    currency: string;
+    sourceId: string;
+  }) =>
+    api<{
+      success: boolean;
+      order: CreateOrderResult;
+      payment: { id: string; status: string; receiptUrl?: string };
+    }>("/api/payment/process", { method: "POST", body: JSON.stringify(payload) }),
+};
+
 export const adminItemsApi = {
   list: () => api<{ items: AdminItem[] }>("/api/admin/items"),
   get: (id: number) => api<{ item: AdminItem; images: AdminItemImage[] }>(`/api/admin/items/${id}`),
