@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useAuth } from "../auth/authProvider";
-import { useNavigate } from "react-router-dom";
+import { Navigate, useNavigate } from "react-router-dom";
 
 export function LoginPage() {
   const { login, user } = useAuth();
@@ -12,8 +12,7 @@ export function LoginPage() {
 
   // Redirect if already logged in
   if (user?.isAdmin) {
-    navigate("/admin/items");
-    return null;
+    return <Navigate to="/admin/items" replace />;
   }
 
   async function onSubmit(e: React.FormEvent) {
