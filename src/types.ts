@@ -57,6 +57,7 @@ export type CreateOrderResult = {
 };
 
 export type FulfillmentStateCode = "NEEDS_CREATED" | "NEEDS_SHIPPED" | "SHIPPED";
+export type OrderStatusCode = "RECEIVED" | "COMPLETE";
 
 export type FulfillmentQueueRow = {
   unitId: number;
@@ -70,6 +71,50 @@ export type FulfillmentQueueRow = {
   shippingAddress: any;
   lineItemId: number;
   lineItemTitleSnapshot: string;
+};
+
+export type AdminFulfillmentOrderSummary = {
+  orderId: number;
+  orderStatus: OrderStatusCode;
+  orderEmail: string;
+  shippingAddress: any;
+  subtotalCents: number;
+  taxCents: number;
+  shippingCents: number;
+  totalCents: number;
+  createdAt: string;
+  updatedAt: string;
+  totalUnits: number;
+  needsCreatedUnits: number;
+  needsShippedUnits: number;
+  shippedUnits: number;
+};
+
+export type AdminFulfillmentUnitDetail = {
+  unitId: number;
+  stateCode: FulfillmentStateCode;
+  queuedAt: string;
+  shippedAt: string | null;
+  carrier: string | null;
+  trackingNumber: string | null;
+  itemId: number;
+  itemTitle: string;
+  lineItemId: number;
+  lineItemTitleSnapshot: string;
+};
+
+export type AdminOrderLineItemDetail = {
+  lineItemId: number;
+  itemId: number | null;
+  titleSnapshot: string;
+  unitPriceCentsSnapshot: number;
+  quantity: number;
+  units: AdminFulfillmentUnitDetail[];
+};
+
+export type AdminFulfillmentOrderDetail = {
+  order: AdminFulfillmentOrderSummary;
+  lineItems: AdminOrderLineItemDetail[];
 };
 
 export type AdminItem = {

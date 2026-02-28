@@ -8,6 +8,9 @@ import type {
   AdminItemImage,
   FulfillmentQueueRow,
   FulfillmentStateCode,
+  OrderStatusCode,
+  AdminFulfillmentOrderSummary,
+  AdminFulfillmentOrderDetail,
   SupportTicket,
   CreateTicketInput,
   UpdateTicketInput,
@@ -106,6 +109,20 @@ export const adminFulfillmentApi = {
     api<{ state: FulfillmentStateCode; count: number; rows: FulfillmentQueueRow[] }>(
       `/api/admin/fulfillment/queue?state=${encodeURIComponent(state)}`
     ),
+
+  listOrders: (params?: { status?: OrderStatusCode; orderId?: number; email?: string }) => {
+    const search = new URLSearchParams();
+    if (params?.status) search.set("status", params.status);
+    if (params?.orderId != null) search.set("orderId", String(params.orderId));
+    if (params?.email) search.set("email", params.email);
+
+    const query = search.toString();
+    return api<{ count: number; orders: AdminFulfillmentOrderSummary[] }>(
+      `/api/admin/fulfillment/orders${query ? `?${query}` : ""}`
+    );
+  },
+
+  getOrder: (orderId: number) => api<AdminFulfillmentOrderDetail>(`/api/admin/fulfillment/orders/${orderId}`),
 
   createdDone: (unitId: number) =>
     api<{ unitId: number; newState: FulfillmentStateCode }>(`/api/admin/fulfillment/units/${unitId}/created-done`, {
